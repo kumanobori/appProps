@@ -15,6 +15,7 @@
 function execExplorer ([int]$gridX, [int]$gridY, [string]$folderPath) {
 	explorer $folderPath
 	Start-Sleep -m $waitMsec
+	# エクスプローラの配列の配列はどうやら起動順らしいので、最後に起動したエクスプローラは最終要素になる
 	$app = (New-Object -com "Shell.Application").windows() | Select-Object -last 1
 	$app.Left = $startX + $gridX * ($width + $paddingX)
 	$app.Top = $startY + $gridY * ($height + $paddingY)
