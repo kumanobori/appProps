@@ -1,0 +1,2 @@
+// カーソル直下にあるウィンドウを、座標0,0に移動
+ACW(GETID(GET_FROMPOINT_WIN),0,0)
