@@ -1,0 +1,29 @@
+call readyForMemo;
+endmacro;
+
+//----ファイルの先頭に日時文字列を入力する
+readyForMemo:
+	call cursorToTop;
+	call outputHeader;
+	call cursorToMemoPosition;
+	return;
+
+cursorToTop:
+	gofiletop;
+	return;
+outputHeader:
+	insert "------";
+	call getCurrentDateString;
+	insert $$return;
+	insert "--------------------------------";
+	return;
+cursorToMemoPosition:
+	insert "\n\n\t";
+	insertfix "\n\n\n";
+	return;
+
+//----現在時刻の文字列を返す。形式はYYYY-MM-DD_HH:MM:SS
+getCurrentDateString:
+	refreshdatetime;
+	$$dateString = year + "-" + month + "-" + day + "_" + hour + ":" + minute + ":" + second;
+	return $$dateString;

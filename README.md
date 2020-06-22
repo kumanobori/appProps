@@ -1,2 +1,2 @@
-# appPrps
+# appProps
 props for application
