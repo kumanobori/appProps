@@ -121,8 +121,8 @@ x = x + baseWidth * (posX - 1)
 y = y + baseHeight * (posY - 1)
 
 // ウィンドウサイズ
-dim width
-dim height
+DIM width
+DIM height
 width = baseWidth * colspan
 height = baseHeight * rowspan
 
@@ -130,12 +130,26 @@ IFB DEBUG_MODE
 	print "x=" + x + ", y=" + y + ", width=" + width + ", height=" + height
 ENDIF
 
+DIM windowId
 // 実行
 IFB (TARGET_SELECT = "ACTIVE")
+	IFB DEBUG_MODE
+		print "TARGET=activeWindow"
+	ENDIF
 	ACW(GETID( ALL_WIN_ID[GETALLWIN() - 2] ), x, y, width, height)
 ELSEIF (TARGET_SELECT = "CURSOR")
-	ACW(GETID(GET_FROMPOINT_WIN), x, y, width, height)
+	IFB DEBUG_MODE
+		print "TARGET=cursorPointedWindow"
+	ENDIF
+	windowId = GETID(GET_FROMPOINT_WIN)
+	ACW(windowId, x, y, width, height)
 ENDIF
+
+
+IFB DEBUG_MODE
+	print "RESULT: x=" + STATUS(windowId, ST_X) + ", y=" + STATUS(windowId, ST_Y) + ", width=" + STATUS(windowId, ST_WIDTH) + ", height=" + STATUS(windowId, ST_HEIGHT)
+ENDIF
+
 
 EXITEXIT
 // ----------------------
