@@ -1,0 +1,163 @@
+OPTION EXPLICIT
+// --------------------------------------------------------------
+// 画面を任意のマス目に分割して、カーソル下のウィンドウをリサイズ＋移動させる。
+// --------------------------------------------------------------
+
+
+// ----------------------
+// ----- 設定 start -----
+// ----------------------
+
+// 対象とするウィンドウの選択方法。CURSORならカーソル下にあるウィンドウ、ACTIVEならアクティブウィンドウ（未実装）
+PUBLIC TARGET_SELECT = "CURSOR"
+// PUBLIC TARGET_SELECT = "ACTIVE" // 未実装
+
+
+// 画面を縦横それぞれ何分割で扱うか指定
+PUBLIC SCREEN_VERTICAL_DIVIDE_COUNT = 4
+PUBLIC SCREEN_HORIZONTAL_DIVIDE_COUNT = 4
+
+// 4Kの解像度
+PUBLIC FULL4K_WIDTH = 3840
+PUBLIC FULL4K_HEIGHT = 2160
+
+// MONITOR_CONF配列に用いる添字
+PUBLIC IDX_START_X = 0
+PUBLIC IDX_START_Y = 1
+PUBLIC IDX_WIDTH = 2
+PUBLIC IDX_HEIGHT = 3
+
+// window設定格納変数
+PUBLIC MONITOR_CONF[1][3]
+
+// window1設定：開始x位置、開始y位置、幅、高さ
+MONITOR_CONF[0][0] = 0
+MONITOR_CONF[0][1] = 0
+MONITOR_CONF[0][2] = 3760 // タスクバーを右につけている分、window1は幅が少ない。
+MONITOR_CONF[0][3] = FULL4K_HEIGHT
+
+// window2設定：開始x位置、開始y位置、幅、高さ
+MONITOR_CONF[1][0] = FULL4K_WIDTH
+MONITOR_CONF[1][1] = 0
+MONITOR_CONF[1][2] = FULL4K_WIDTH
+MONITOR_CONF[1][3] = FULL4K_HEIGHT
+
+// ----------------------
+// ----- 設定 end -----
+// ----------------------
+
+
+// ----------------------
+// ----- 処理 start -----
+// ----------------------
+
+
+// 入力ダイアログ
+DIM MODE
+MODE = INPUT("1文字目:画面No(1 - " + LENGTH(MONITOR_CONF)                   + ")<#CR>" _
+           + "2文字目:縦位置(1 - " + SCREEN_VERTICAL_DIVIDE_COUNT   + ")<#CR>" _
+           + "3文字目:横位置(1 - " + SCREEN_HORIZONTAL_DIVIDE_COUNT + ")<#CR>" _
+           + "4文字目:縦サイズ(省略可, 1以上)<#CR>" _
+           + "5文字目:横サイズ(省略可, 1以上)<#CR>" _
+           )
+
+// 入力値を変数に格納
+DIM monitorNo
+DIM posY
+DIM posX
+DIM rowspan
+DIM colspan
+monitorNo = VAL(COPY(MODE,1,1))
+posY = VAL(COPY(MODE,2,1))
+posX = VAL(COPY(MODE,3,1))
+IFB (LENGTH(MODE) >= 4)
+	rowspan = VAL(COPY(MODE,4,1))
+ELSE
+	rowspan = 1
+ENDIF
+IFB (LENGTH(MODE) >= 5)
+	colspan = VAL(COPY(MODE,5,1))
+ELSE
+	colspan = 1
+ENDIF
+
+// 入力値チェック
+DIM validationResult = validation(monitorNo, posY, posX, rowspan, colspan)
+IFB (LENGTH(validationResult) <> 0)
+	MSGBOX("入力値エラーです。<#CR>入力値=[" + MODE + "]<#CR>" + validationResult + "処理を行わず終了します。")
+	EXITEXIT
+ENDIF
+
+// monitorNoの値は、MONITOR_CONFの添字に合わせるためにマイナス1する。
+monitorNo = monitorNo - 1
+
+// rowspan=1, colspan=1のウィンドウサイズ
+DIM baseWidth
+DIM baseHeight
+baseHeight = MONITOR_CONF[monitorNo][IDX_HEIGHT] / SCREEN_VERTICAL_DIVIDE_COUNT
+baseWidth = MONITOR_CONF[monitorNo][IDX_WIDTH] / SCREEN_HORIZONTAL_DIVIDE_COUNT
+
+
+// ウィンドウ位置
+DIM x
+DIM y
+// ウィンドウ位置を、画面の0,0にする
+x = MONITOR_CONF[monitorNo][IDX_START_X]
+y = MONITOR_CONF[monitorNo][IDX_START_Y]
+// ウィンドウ位置を、posX,posYのぶん加算する
+x = x + baseWidth * (posX - 1)
+y = y + baseHeight * (posY - 1)
+
+// ウィンドウサイズ
+dim width
+dim height
+width = baseWidth * colspan
+height = baseHeight * rowspan
+
+// 実行
+IFB (TARGET_SELECT = "ACTIVE")
+	ACW(GETID( ALL_WIN_ID[GETALLWIN() - 2] ), x, y, width, height)
+ELSEIF (TARGET_SELECT = "CURSOR")
+	ACW(GETID(GET_FROMPOINT_WIN), x, y, width, height)
+ENDIF
+
+EXITEXIT
+// ----------------------
+// ----- 処理 end -----
+// ----------------------
+
+
+// ------------------
+// 入力値チェック
+// ------------------
+FUNCTION validation (monitorNo, posY, posX, rowspan, colspan)
+	dim wk
+
+	IFB (1 <= monitorNo AND monitorNo <= LENGTH(MONITOR_CONF))
+		// OK
+	ELSE
+		wk = wk + "1文字目の有効値は1～" + LENGTH(MONITOR_CONF) + "です<#CR>"
+	ENDIF
+	IFB (1 <= posY   AND posY   <= SCREEN_VERTICAL_DIVIDE_COUNT)
+		// OK
+	ELSE
+		wk = wk + "2文字目の有効値は1～" + SCREEN_VERTICAL_DIVIDE_COUNT + "です<#CR>"
+	ENDIF
+	IFB (1 <= posX   AND posX   <= SCREEN_HORIZONTAL_DIVIDE_COUNT)
+		// OK
+	ELSE
+		wk = wk + "3文字目の有効値は1～" + SCREEN_HORIZONTAL_DIVIDE_COUNT + "です<#CR>"
+	ENDIF
+	IFB (rowspan >= 1)
+		// OK
+	ELSE
+		wk = wk + "4文字目の有効値は1以上の数値です<#CR>"
+	ENDIF
+	IFB (colspan >= 1)
+		// OK
+	ELSE
+		wk = wk + "5文字目の有効値は1以上の数値です<#CR>"
+	ENDIF
+	RESULT = wk
+FEND
+
