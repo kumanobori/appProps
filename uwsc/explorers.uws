@@ -1,5 +1,8 @@
 OPTION EXPLICIT
 
+PUBLIC DEFAULT_PATH = "C:\data"
+
+
 // --------------------------------------------------------------
 // エクスプローラを複数開いて並べるスクリプト
 // 「設定部分」と「実行部分」を任意に変更したうえで動かす。
@@ -11,30 +14,78 @@ OPTION EXPLICIT
 // PC性能によっては、エクスプローラの起動に時間がかかるため、
 // 間に合わずに次の動作に入るとうまくいかない。
 // 高性能なPCなら0でも動くかもしれない。
-PUBLIC wait_after_win_e = 1
+PUBLIC wait_after_win_e = 0.5
 
 // 個々の動作の間で挟む待ち時間。
 // PC性能によっては、待ちを入れないとうまく動いてくれない。
 // 高性能なPCなら0でも動くかもしれない。
-PUBLIC wait_petit = 0.3
+PUBLIC wait_petit = 0.2
 
-
-// 並べるウィンドウの位置と幅に関する定義。
-DIM x = 0 // 一番左上に配置するウィンドウのx座標
-DIM y = 0 // 一番左上に配置するウィンドウのy座標
-PUBLIC width = 700 // エクスプローラのウィンドウ幅
-PUBLIC height = 350 // エクスプローラのウィンドウ高さ
 
 // ---- 設定部分end ---------------------------------------------
-// ---- 設定部分start -------------------------------------------
+
+
+
+// ---- 分岐設定部分start -------------------------------------------
+DIM MODE
+MODE = INPUT("1st char = window size(1=for HD/UXGA 2=for 4K, 2nd char = screen No.(1 or 2)")
+
+DIM WINDOW_SIZE
+DIM SCREEN_NO
+WINDOW_SIZE = VAL(COPY(MODE,1,1))
+SCREEN_NO = VAL(COPY(MODE,2,1))
+
+IFB (WINDOW_SIZE = 1 OR WINDOW_SIZE = 2) AND (SCREEN_NO = 1 OR SCREEN_NO = 2)
+ELSE
+	MSGBOX("INPUT ERROR. vaild input is [1-2][1-2]")
+	EXITEXIT
+ENDIF
+
+PUBLIC x // 一番左上に配置するウィンドウのx座標
+PUBLIC y // 一番左上に配置するウィンドウのy座標
+PUBLIC width
+PUBLIC height
+
+IFB WINDOW_SIZE = 1 THEN
+	// 並べるウィンドウの位置と幅に関する定義。
+	width = 700 // エクスプローラのウィンドウ幅
+	height = 350 // エクスプローラのウィンドウ高さ
+ELSEIF WINDOW_SIZE = 2 THEN
+	// 4K ウィンドウ：0～3760、タスクバー＝3761～3839
+	// 並べるウィンドウの位置と幅に関する定義。
+	width = 1400 // エクスプローラのウィンドウ幅
+	height = 700 // エクスプローラのウィンドウ高さ
+ELSE
+	MSGBOX("WINDOW_SIZE ERROR. vaild input is 1 or 2")
+ENDIF
+
+IFB SCREEN_NO = 1 THEN
+	// 並べるウィンドウの位置と幅に関する定義。
+	x = 0
+	y = 0
+ELSEIF SCREEN_NO = 2 THEN
+	// 4K ウィンドウ：0～3760、タスクバー＝3761～3839
+	// 並べるウィンドウの位置と幅に関する定義。
+	x = 3840
+	y = 0
+ELSE
+	MSGBOX("SCREEN_NO ERROR. vaild input is 1 or 2")
+ENDIF
+
+
+
+// ---- 分岐設定部分end -------------------------------------------
+
+
+// ---- 実行部分start -------------------------------------------
 
 // 配置順と位置とパスは任意に
-execExplorer(0, 0, "c:\")
-execExplorer(1, 0, "B:\_usr\_temp\rec\screen_shot")
-execExplorer(0, 1, "C:\dev\src\github")
-execExplorer(1, 1, "C:\dev\src\github")
-execExplorer(0, 2, "B:\_usr\_temp\rec\screen_shot")
-execExplorer(1, 2, "C:\_usr\app\_no_inst\uwsc\script")
+execExplorer(0, 0, DEFAULT_PATH)
+execExplorer(1, 0, DEFAULT_PATH)
+execExplorer(0, 1, DEFAULT_PATH)
+execExplorer(1, 1, DEFAULT_PATH)
+execExplorer(0, 2, "D:\data\")
+execExplorer(1, 2, "D:\data\")
 
 // ---- 実行部分end ---------------------------------------------
 EXITEXIT
@@ -58,25 +109,35 @@ FUNCTION execExplorer(gridX, gridY, path)
 	SLEEP(wait_after_win_e)
 	
 	
-	DIM offsetX = gridX * width
-	DIM offsetY = gridY * height
+	DIM offsetX = gridX * width + x
+	DIM offsetY = gridY * height + y
 
 	// ウィンドウ位置設定
 	ACW(GETID(GET_ACTIVE_WIN), offsetX, offsetY, width, height)
+	SLEEP(wait_petit)
 	
 	// フォルダ移動
-	SLEEP(wait_petit)
+	// Alt+D
 	KBD(VK_RALT,DOWN,0)
 	KBD(VK_D,CLICK,0)
 	KBD(VK_RALT,UP,0)
 	SLEEP(wait_petit)
+	
+	// Ctrl+A
 	KBD(VK_RCTRL,DOWN,0)
 	KBD(VK_A,CLICK,0)
 	KBD(VK_RCTRL,UP,0)
 	SLEEP(wait_petit)
+	
+	// DELETE
 	KBD(VK_DELETE,CLICK,0)
+	
+	// フォルダパス入力
 	SENDSTR(GETID(GET_ACTIVE_WIN), path)
+	
+	// ENTER
 	KBD(VK_RETURN,CLICK,0)
+	SLEEP(wait_petit)
 	
 	RESULT = 0
 	FEND
